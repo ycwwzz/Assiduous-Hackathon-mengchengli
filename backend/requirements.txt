@@ -1,0 +1,11 @@
+fastapi
+uvicorn
+yfinance
+pydantic
+openai>=1.0.0
+playwright
+requests
+chromadb
+tiktoken
+beautifulsoup4
+fpdf2
