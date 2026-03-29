@@ -54,53 +54,18 @@
           </button>
         </div>
 
-        <!-- 第一行：图表和新闻 -->
-        <div class="dashboard-grid">
-          <!-- 左侧：图表卡片 -->
-          <div class="card chart-card">
-            <div class="card-header">
-              <h3>📊 Price Target Sensitivity</h3>
-              <span class="tag">Chart.js Visualized</span>
-            </div>
-            <div
-              class="chart-container"
-              style="position: relative; height: 250px; width: 100%"
-            >
-              <canvas id="scenarioChart"></canvas>
-            </div>
-            <!-- 情景描述盒子 -->
-            <div v-if="result.scenarios && result.scenarios.base_case" class="scenario-items">
-              <div class="s-box up">
-                <div class="s-label">Upside</div>
-                <div class="s-val">${{ result.scenarios.upside_case.price }}</div>
-                <div class="s-desc">{{ result.scenarios.upside_case.desc }}</div>
-              </div>
-              <div class="s-box base">
-                <div class="s-label">Base Case</div>
-                <div class="s-val">${{ result.scenarios.base_case.price }}</div>
-                <div class="s-desc">{{ result.scenarios.base_case.desc }}</div>
-              </div>
-              <div class="s-box down">
-                <div class="s-label">Downside</div>
-                <div class="s-val">${{ result.scenarios.downside_case.price }}</div>
-                <div class="s-desc">{{ result.scenarios.downside_case.desc }}</div>
-              </div>
-            </div>
+        <!-- 新闻卡片 -->
+        <div class="card news-card" v-if="result.news && result.news.length > 0">
+          <div class="card-header">
+            <h3>📰 Live Market Context</h3>
+            <span class="tag">Tool Generated</span>
           </div>
-
-          <!-- 右侧：新闻卡片 -->
-          <div class="card news-card" v-if="result.news && result.news.length > 0">
-            <div class="card-header">
-              <h3>📰 Live Market Context</h3>
-              <span class="tag">Tool Generated</span>
-            </div>
-            <ul class="news-list">
-              <li v-for="(item, idx) in result.news" :key="idx">
-                <span class="news-publisher">{{ item.publisher }}</span>
-                <span class="news-title">{{ item.title }}</span>
-              </li>
-            </ul>
-          </div>
+          <ul class="news-list">
+            <li v-for="(item, idx) in result.news" :key="idx">
+              <span class="news-publisher">{{ item.publisher }}</span>
+              <span class="news-title">{{ item.title }}</span>
+            </li>
+          </ul>
         </div>
 
         <!-- AI报告卡片 -->
@@ -117,17 +82,16 @@
 </template>
 
 <script setup>
-import { ref, nextTick } from 'vue'
-import Chart from 'chart.js/auto'
+import { ref } from 'vue'
 
 const ticker = ref('')
 const loading = ref(false)
 const exporting = ref(false)
 const error = ref(null)
 const result = ref(null)
-let chartInstance = null
 
 const formatText = (text) => text?.replace(/\n/g, '<br/>') || ''
+
 
 const runPipeline = async () => {
   if (!ticker.value) return
@@ -144,63 +108,11 @@ const runPipeline = async () => {
     const data = await res.json()
     if (!res.ok) throw new Error(data.detail || 'Pipeline Failed')
     result.value = data.data
-
-    // 确保DOM渲染完毕后绘制图表
-    await nextTick()
-    renderChart()
   } catch (err) {
     error.value = err.message
   } finally {
     loading.value = false
   }
-}
-
-// 绘制Chart.js图表
-const renderChart = () => {
-  const ctx = document.getElementById('scenarioChart')
-  if (!ctx) return
-
-  // 销毁旧图表
-  if (chartInstance) {
-    chartInstance.destroy()
-  }
-
-  const scenarios = result.value.scenarios
-
-  chartInstance = new Chart(ctx, {
-    type: 'bar',
-    data: {
-      labels: ['Downside', 'Current', 'Base Case', 'Upside'],
-      datasets: [{
-        label: 'Price Target ($)',
-        data: [
-          scenarios.downside_case.price,
-          result.value.current_price,
-          scenarios.base_case.price,
-          scenarios.upside_case.price
-        ],
-        backgroundColor: [
-          'rgba(239, 68, 68, 0.7)',
-          'rgba(148, 163, 184, 0.7)',
-          'rgba(59, 130, 246, 0.7)',
-          'rgba(16, 185, 129, 0.7)'
-        ],
-        borderRadius: 6
-      }]
-    },
-    options: {
-      responsive: true,
-      maintainAspectRatio: false,
-      plugins: {
-        legend: { display: false },
-        tooltip: {
-          callbacks: {
-            label: (context) => `$${context.parsed.y}`
-          }
-        }
-      }
-    }
-  })
 }
 
 // 导出PDF功能
@@ -512,67 +424,6 @@ button:disabled {
   font-size: 24px;
   margin-right: 4px;
   font-weight: 500;
-}
-
-/* Grid Layout */
-.dashboard-grid {
-  display: grid;
-  grid-template-columns: 3fr 2fr;
-  gap: 24px;
-}
-
-@media (max-width: 768px) {
-  .dashboard-grid {
-    grid-template-columns: 1fr;
-  }
-}
-
-/* Scenarios */
-.scenario-items {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  margin-top: 20px;
-}
-
-.s-box {
-  display: flex;
-  align-items: center;
-  padding: 16px;
-  border-radius: 8px;
-  border: 1px solid var(--border);
-}
-
-.s-box.up {
-  border-left: 4px solid #10b981;
-}
-
-.s-box.base {
-  border-left: 4px solid #cbd5e1;
-}
-
-.s-box.down {
-  border-left: 4px solid #ef4444;
-}
-
-.s-label {
-  width: 80px;
-  font-weight: 600;
-  font-size: 13px;
-  color: var(--text-muted);
-}
-
-.s-val {
-  font-size: 20px;
-  font-weight: 700;
-  width: 100px;
-}
-
-.s-desc {
-  flex: 1;
-  font-size: 13px;
-  color: var(--text-muted);
-  line-height: 1.5;
 }
 
 /* News */

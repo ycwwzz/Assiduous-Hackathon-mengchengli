@@ -32,7 +32,6 @@ class PDFRequest(BaseModel):
 @app.post("/api/analyze")
 def analyze_company(req: AnalyzeRequest):
     try:
-        # 这里调用的是你之前稳定版的 pipeline.py
         result = run_agentic_pipeline(req.ticker)
         return {"status": "success", "data": result}
     except Exception as e:
@@ -42,7 +41,6 @@ def analyze_company(req: AnalyzeRequest):
 
 @app.post("/api/export_pdf")
 def export_pdf(req: PDFRequest):
-    """【黑科技】将 AI 报告瞬间排版成投行级 PDF 文件"""
     try:
         pdf = FPDF()
         pdf.add_page()

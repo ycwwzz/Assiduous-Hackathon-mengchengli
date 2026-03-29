@@ -10,7 +10,7 @@ from chromadb.utils import embedding_functions
 client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
 # ==========================================
-# 🧠 VECTOR DATABASE SETUP (持久化本地向量库)
+# 🧠 VECTOR DATABASE SETUP
 # ==========================================
 print("📦 [SYSTEM] Initializing Local Vector Database (ChromaDB)...")
 openai_ef = embedding_functions.OpenAIEmbeddingFunction(
@@ -25,7 +25,7 @@ collection = chroma_client.get_or_create_collection(
 
 
 # ==========================================
-# 🛠️ AGENT TOOLS (包含全新融合的 Auto-RAG 工具)
+# 🛠️ AGENT TOOLS
 # ==========================================
 
 def calculate_financial_scenarios(current_price: float, base_growth: float):
@@ -59,16 +59,14 @@ def fetch_fundamentals_alphavantage(ticker: str):
 
 
 def get_company_insights_via_rag(url: str, ticker: str):
-    """【超级融合工具】底层自动完成：爬取网页 -> 切片入库 -> 向量检索"""
+    """web -> chunk -> vector search"""
     print(f"🌐🔎 [TOOL 4 - RAG] Executing Auto-RAG pipeline for {url}...")
     try:
-        # 1. 极速爬取 (摒弃易崩溃的 Playwright)
         headers = {'User-Agent': 'Mozilla/5.0'}
         response = requests.get(url, headers=headers, timeout=10)
         soup = BeautifulSoup(response.text, 'html.parser')
         text = soup.get_text(separator=' ', strip=True)
 
-        # 2. 存入 ChromaDB 数据库 (满足评委数据摄取要求)
         chunk = text[:3000]  # 截取前 3000 字
         collection.upsert(
             documents=[chunk],
@@ -77,7 +75,6 @@ def get_company_insights_via_rag(url: str, ticker: str):
         )
         print("💾 [DATABASE] Web data embedded and saved to ChromaDB!")
 
-        # 3. 立即从库中进行检索并返回
         query = "What is the company's core product, main business, and strategic positioning?"
         results = collection.query(
             query_texts=[query],
@@ -194,3 +191,5 @@ def run_agentic_pipeline(ticker: str):
                                         "desc": "Agent modeled"}},
         "ai_report": final_report
     }
+
+
